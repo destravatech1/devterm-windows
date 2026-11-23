@@ -1,0 +1,6 @@
+devterm-windows
+Adaptação para Windows (Windows Terminal + WSL2) do devterm, de skaisser:
+https://github.com/skaisser/devterm — licença Apache 2.0.
+Os arquivos assets/skaisser.omp.json, assets/statusline.sh, assets/zshrc.local.example
+e a base de assets/zshrc.wsl vêm do devterm. As cores (assets/skaisser.wt-scheme.json)
+foram convertidas de assets/skaisser.itermcolors do devterm.

@@ -1,0 +1,23 @@
+{
+  "name": "skaisser",
+  "background": "#282a36",
+  "foreground": "#f8f8f2",
+  "cursorColor": "#f8f8f8",
+  "selectionBackground": "#44475a",
+  "black": "#21222c",
+  "brightBlack": "#6272a4",
+  "red": "#ff5555",
+  "brightRed": "#ff6e6e",
+  "green": "#50fa7b",
+  "brightGreen": "#69ff47",
+  "yellow": "#f1fa8c",
+  "brightYellow": "#ffffa5",
+  "blue": "#bd93f9",
+  "brightBlue": "#d6acff",
+  "purple": "#ff79c6",
+  "brightPurple": "#ff92df",
+  "cyan": "#8be9fd",
+  "brightCyan": "#a4ffff",
+  "white": "#f8f8f2",
+  "brightWhite": "#ffffff"
+}
