@@ -9,7 +9,7 @@
 
   Pode rodar de novo quantas vezes quiser: só instala o que falta.
 #>
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'   # programas externos (git, winget, wsl) escrevem no stderr sem ser erro
 $RepoUrl = 'https://github.com/destravatech1/devterm-windows.git'   # troque pelo seu repositório
 $Distro  = 'Ubuntu'
 $WtGuid  = '{6d7e2c5a-3b1f-4c8e-9a2d-de0e7e2b0001}'
@@ -42,8 +42,7 @@ Write-Host "`ndevterm-windows  (pasta: $Root)`n" -ForegroundColor Magenta
 $apps = @(
     @{ id = 'Microsoft.WindowsTerminal'; nome = 'Windows Terminal' },
     @{ id = 'Microsoft.PowerShell';      nome = 'PowerShell 7' },
-    @{ id = 'Git.Git';                   nome = 'Git' },
-    @{ id = 'JanDeDobbeleer.OhMyPosh';   nome = 'Oh My Posh (para instalar a fonte)' }
+    @{ id = 'Git.Git';                   nome = 'Git' }
 )
 foreach ($a in $apps) {
     $lista = winget list -e --id $a.id 2>$null | Out-String
@@ -55,12 +54,28 @@ foreach ($a in $apps) {
 $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
 
 # ── 3. Fonte com ícones (MesloLGS Nerd Font) ───────────────────────────────────
-$temFonte = Get-ChildItem "$env:WINDIR\Fonts", "$env:LOCALAPPDATA\Microsoft\Windows\Fonts" -Filter 'MesloLGS*' -ErrorAction SilentlyContinue
+$temFonte = Get-ChildItem "$env:WINDIR\Fonts" -Filter 'MesloLGS*NerdFontMono*' -ErrorAction SilentlyContinue
 if ($temFonte) { Ok 'Fonte MesloLGS Nerd Font já instalada' }
 else {
-    Info 'Instalando a fonte MesloLGS Nerd Font...'
-    oh-my-posh font install meslo --headless 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { Ok 'Fonte MesloLGS Nerd Font' } else { Falha 'Fonte (instale manualmente: oh-my-posh font install meslo)' }
+    Info 'Baixando e instalando a fonte MesloLGS Nerd Font...'
+    try {
+        $tmp = Join-Path $env:TEMP 'devterm-meslo'
+        Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+        $zip = Join-Path $tmp 'Meslo.zip'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest 'https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip' -OutFile $zip -UseBasicParsing
+        Expand-Archive $zip -DestinationPath $tmp -Force
+        $chave = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts'
+        $n = 0
+        Get-ChildItem $tmp -Filter 'MesloLGSNerdFontMono-*.ttf' | ForEach-Object {
+            Copy-Item $_.FullName (Join-Path "$env:WINDIR\Fonts" $_.Name) -Force
+            $nomeFonte = ($_.BaseName -replace 'MesloLGSNerdFontMono-', 'MesloLGS Nerd Font Mono ') + ' (TrueType)'
+            Set-ItemProperty -Path $chave -Name $nomeFonte -Value $_.Name
+            $n++
+        }
+        if ($n -gt 0) { Ok "Fonte MesloLGS Nerd Font Mono ($n arquivos)" } else { Falha 'Fonte: nenhum arquivo MesloLGS encontrado no pacote' }
+    } catch { Falha "Fonte: $($_.Exception.Message)" }
 }
 
 # ── 4. WSL2 + Ubuntu ───────────────────────────────────────────────────────────
