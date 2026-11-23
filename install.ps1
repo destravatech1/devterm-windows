@@ -21,7 +21,12 @@ function Falha($m){ Write-Host "  XX  $m" -ForegroundColor Red }
 # ── 0. Administrador ───────────────────────────────────────────────────────────
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $admin) {
-    Write-Host 'Abra o PowerShell como ADMINISTRADOR (botão direito > Executar como administrador) e rode de novo.' -ForegroundColor Yellow
+    if ($PSCommandPath) {
+        # Rodando de um arquivo (ex.: depois de reiniciar): pede administrador e continua
+        Start-Process powershell -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -NoExit -File `"$PSCommandPath`""
+    } else {
+        Write-Host 'Abra o PowerShell como ADMINISTRADOR (botão direito > Executar como administrador) e rode de novo.' -ForegroundColor Yellow
+    }
     return
 }
 
@@ -86,7 +91,9 @@ if (-not ($distros -contains $Distro)) {
     # Continua sozinho depois de reiniciar
     $cmd = "powershell -ExecutionPolicy Bypass -NoExit -File `"$Root\install.ps1`""
     Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' -Name 'devterm-windows' -Value $cmd
-    Write-Host "`nReinicie o computador. Depois de entrar de novo, a instalação continua sozinha (aceite o pedido de administrador)." -ForegroundColor Yellow
+    Write-Host "`nREINICIE O COMPUTADOR AGORA (Iniciar > Ligar/Desligar > Reiniciar)." -ForegroundColor Yellow
+    Write-Host "Depois de entrar de novo, a instalação continua sozinha: aceite o pedido de administrador que vai aparecer." -ForegroundColor Yellow
+    Write-Host "Se não aparecer nada, abra o PowerShell como administrador e rode o mesmo comando de instalação." -ForegroundColor Yellow
     return
 }
 Ok "WSL2 + $Distro"
