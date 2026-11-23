@@ -88,6 +88,9 @@ $distros = (wsl.exe -l -q 2>$null) -replace "`0", '' | Where-Object { $_.Trim() 
 if (-not ($distros -contains $Distro)) {
     Info "Instalando WSL2 + $Distro (pode pedir para reiniciar o computador)..."
     wsl.exe --install -d $Distro --no-launch
+    $distros = (wsl.exe -l -q 2>$null) -replace "`0", '' | Where-Object { $_.Trim() }
+}
+if (-not ($distros -contains $Distro)) {
     # Continua sozinho depois de reiniciar
     $cmd = "powershell -ExecutionPolicy Bypass -NoExit -File `"$Root\install.ps1`""
     Set-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' -Name 'devterm-windows' -Value $cmd
@@ -97,6 +100,7 @@ if (-not ($distros -contains $Distro)) {
     return
 }
 Ok "WSL2 + $Distro"
+Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' -Name 'devterm-windows' -ErrorAction SilentlyContinue
 
 # Primeiro uso do Ubuntu: criar usuário e senha
 $usuario = (wsl.exe -d $Distro -- whoami 2>$null) -replace "`0", ''
