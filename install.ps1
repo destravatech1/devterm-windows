@@ -102,14 +102,19 @@ if (-not ($distros -contains $Distro)) {
 Ok "WSL2 + $Distro"
 Remove-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' -Name 'devterm-windows' -ErrorAction SilentlyContinue
 
-# Primeiro uso do Ubuntu: criar usuário e senha
-$usuario = (wsl.exe -d $Distro -- whoami 2>$null) -replace "`0", ''
-if (-not $usuario -or $usuario.Trim() -eq 'root') {
-    Write-Host "`nVai abrir o Ubuntu pela primeira vez. Crie um usuário e uma senha (guarde a senha)." -ForegroundColor Yellow
-    Write-Host 'Quando aparecer o prompt do Ubuntu, digite  exit  e aperte Enter para voltar aqui.' -ForegroundColor Yellow
-    & "$env:LOCALAPPDATA\Microsoft\WindowsApps\ubuntu.exe" 2>$null
-    if ($LASTEXITCODE -ne 0) { wsl.exe -d $Distro }
-}
+# Primeiro uso do Ubuntu: criar usuário e senha (o instalador não roda como root)
+$usuario = ((wsl.exe -d $Distro -- whoami 2>$null) -replace "`0", '' | Out-String).Trim()
+if (-not $usuario -or $usuario -eq 'root') {
+    Write-Host "`nO Ubuntu precisa de um usuário seu (não use 'root')." -ForegroundColor Yellow
+    do { $novo = (Read-Host 'Digite um nome de usuário (só letras minúsculas, sem espaço, ex.: eduardo)').Trim().ToLower() }
+    until ($novo -match '^[a-z][a-z0-9_-]{1,30}$')
+    Write-Host "Agora o Ubuntu vai pedir a SENHA desse usuário duas vezes (ao digitar, não aparece nada; é normal). Guarde essa senha." -ForegroundColor Yellow
+    wsl.exe -d $Distro -u root -- bash -c "id -u $novo >/dev/null 2>&1 || adduser --gecos '' $novo; usermod -aG sudo $novo; printf '[user]\ndefault=$novo\n' > /etc/wsl.conf"
+    wsl.exe --terminate $Distro | Out-Null
+    $usuario = ((wsl.exe -d $Distro -- whoami 2>$null) -replace "`0", '' | Out-String).Trim()
+    if ($usuario -ne $novo) { Falha "Não consegui criar o usuário $novo. Rode o instalador de novo."; return }
+    Ok "Usuário do Ubuntu: $novo"
+} else { Ok "Usuário do Ubuntu: $usuario" }
 
 # ── 5. Parte Linux: zsh, Oh My Posh, plugins, atalhos, Node, Claude Code ──────
 Info 'Configurando o Ubuntu (zsh, prompt, plugins, Node, Claude Code)...'
